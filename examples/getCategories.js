@@ -8,18 +8,17 @@
 
 var bot = require('../lib/bot'),
 	client = new bot({
-		server: 'en.wikipedia.org',
-		path: '/w',
-		debug: true
+		server: '8bit.wikia.com',
+		path: '',
+		debug: false
 	});
 
-client.getPagesInCategory('Bosons', function(pages) {
-	client.log('Pages in category');
-	client.logData(pages);
+client.getCategories(function(cats) {
+	console.log('All categories:');
+	console.log(JSON.stringify(cats));
+});
 
-	pages.forEach(function(page) {
-		client.getArticle(page.title, function(content) {
-			client.log('%s: %s', page.title, content.substr(0, 75).replace(/\n/g, ' '));
-		});
-	});
+client.getCategories('K', function(cats) {
+	console.log('All categories starting with K:');
+	console.log(JSON.stringify(cats));
 });

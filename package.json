@@ -1,0 +1,40 @@
+{
+  "name": "nodemw",
+  "version": "0.3.13",
+  "author": "macbre <maciej.brencz@gmail.com> (http://macbre.net)",
+  "description": "MediaWiki API client written in node.js",
+  "main": "./lib/bot",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/macbre/nodemw.git"
+  },
+  "keywords": [
+    "mediawiki",
+    "wiki",
+    "api",
+    "nodejs"
+  ],
+  "license": "BSD",
+  "engines": {
+    "node": ">=0.6"
+  },
+  "dependencies": {
+    "async": "~0.2.9",
+    "vows": "~0.7.0",
+    "winston": "~0.7.2",
+    "request": "~2.30.0"
+  },
+  "devDependencies": {
+    "jshint": "~2.4.0"
+  },
+  "scripts": {
+    "test": "vows --spec",
+    "lint": "jshint lib/api.js lib/bot.js examples/ test/"
+  },
+  "jshintConfig": {
+    "node": true,
+    "-W030": false,
+    "-W084": false,
+    "strict": true
+  }
+}
