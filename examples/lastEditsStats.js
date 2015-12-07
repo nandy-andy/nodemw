@@ -5,7 +5,7 @@
  */
 'use strict';
 
-var bot = require('../lib/bot'),
+var bot = require('..'),
 	client = new bot('config.js'),
 	START = '2015-10-22 00:00:00',
 	END = '2015-10-26 23:59:59',
@@ -13,7 +13,7 @@ var bot = require('../lib/bot'),
 	PRINT_USERS_STATS = true,
 	LIMIT = 5000;
 
-function recentChangesCallback(data, next) {
+function recentChangesCallback(err, data, next) {
         var usersStats = {},
                 pagesStats = {},
                 count = 0,
@@ -128,3 +128,4 @@ function recentChangesCallback(data, next) {
 }
 
 client.getRecentChanges(START, END, recentChangesCallback);
+

@@ -1,23 +1,20 @@
 nodemw
 ======
 
-MediaWiki API client written in node.js
+[MediaWiki API](http://www.mediawiki.org/wiki/API:Main_page) client written in node.js
 
 [![NPM version](https://badge.fury.io/js/nodemw.png)](http://badge.fury.io/js/nodemw)
 [![Build Status](https://secure.travis-ci.org/macbre/nodemw.png)](http://travis-ci.org/macbre/nodemw)
 
+[![Download stats](https://nodei.co/npm/nodemw.png?downloads=true&downloadRank=true)](https://nodei.co/npm/nodemw/)
+
 ## Requirements
 
-* nodejs
-
-## Dependencies
-
-* [vows](http://vowsjs.org/)
-* [request](https://github.com/mikeal/request)
+* node.js
 
 ## Installation
 
-### Using npm
+### Using npm.p
 
 ``` bash
 npm install nodemw
@@ -33,9 +30,12 @@ git clone https://github.com/macbre/nodemw.git
 
 ## Features
 
-* HTTP requests are stored in queue and performed in serial, there's no risk of flooding the server
-* nodemw core uses promise pattern powered by [deferred-js library](https://github.com/heavylifters/deferred-js)
-* nodemw supports articles creation / edit / move / delete, file uploads (using given content or via provided URL)
+* HTTP requests are stored in the queue and performed in parallel with limited number of "threads" (i.e. there's no risk of flooding the server)
+* articles creation / edit / move / delete
+* file uploads (using given content or via provided URL)
+* Special:Log processing
+* listing articles in categories
+* and much more
 
 ## Where it's used
 
@@ -48,6 +48,18 @@ An example script can be found in `/examples` directory.
 ``` bash
 cd examples
 node pagesInCategory.js
+```
+
+You can enter **debug mode** by setting `DEBUG` enviromental variable:
+
+```bash
+DEBUG=1 node examples/pagesInCategory.js
+```
+
+You can enter **dry-run mode** (all "write" operations like edits and uploads will be disabled) by setting `DRY_RUN` environmental variable (or `dryRun` entry in the config):
+
+```bash
+DRY_RUN=1 node examples/pagesInCategory.js
 ```
 
 ## Running unit tests
@@ -65,13 +77,19 @@ npm test
 
   // pass configuration object
   var client = new bot({
-      server: 'en.wikipedia.org',  // host name of MediaWiki-powered site
-      path: '/w',                  // path to api.php script
-      debug: false                // is more verbose when set to true
+    server: 'en.wikipedia.org',  // host name of MediaWiki-powered site
+    path: '/w',                  // path to api.php script
+    debug: false                 // is more verbose when set to true
   });
 
-  client.getArticle('foo', function(data) {
-      // ...
+  client.getArticle('foo', function(err, data) {
+    // error handling
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    // ...
   });
 ```
 
@@ -112,7 +130,7 @@ var bot = require('nodemw'),
 		query: '[[Modification date::+]]|?Modification date|sort=Modification date|order=desc'
 	};
 
-client.api.call(params /* api.php parameters */, function(info /* processed query result */, next, data /* raw data */) {
+client.api.call(params /* api.php parameters */, function(err /* Error instance or null */, info /* processed query result */, next /* more results? */, data /* raw data */) {
 	console.log(data && data.query && data.query.results);
 });
 ```
@@ -120,6 +138,8 @@ client.api.call(params /* api.php parameters */, function(info /* processed quer
 ## Bot methods
 
 The last parameter of each function in nodemw API is a callback which will be fired when the requested action is done.
+
+**Callbacks use node.js style** - ``err`` is always passed as the first argument.
 
 ### bot.logIn(username, password, callback)
 
@@ -129,9 +149,17 @@ Log-in using given credentials - [read more](http://www.mediawiki.org/wiki/API:L
 
 Gets the list of all categories on a wiki
 
+### bot.getAllPages(callback)
+
+Gets the list of all pages from the main namespace (excludes redirects) - [read more](https://www.mediawiki.org/wiki/API:Allpages)
+
 ### bot.getPagesInCategory(category, callback)
 
 Gets the list of pages in a given category - [read more](http://www.mediawiki.org/wiki/API:Properties#revisions_.2F_rv)
+
+### bot.getPagesInNamespace(namespace, callback)
+
+Gets the list of pages in a given namespace - [read more](http://www.mediawiki.org/wiki/API:Allpages)
 
 ### bot.getPagesByPrefix(prefix, callback)
 
@@ -141,6 +169,14 @@ Gets the list of pages by a given prefix - [read more](https://www.mediawiki.org
 
 Gets article content and its meta data - [read more](http://www.mediawiki.org/wiki/API:Properties#revisions_.2F_rv)
 
+### bot.getArticleRevisions(title, callback)
+
+Gets all revisions of a given article - [read more](http://www.mediawiki.org/wiki/API:Revisions)
+
+### bot.getArticleCategories(title, callback)
+
+Gets all categories a given article is in - [read more](http://www.mediawiki.org/wiki/API:Property/Categories)
+
 ### bot.edit(title, content, summary, callback)
 
 Creates / edits an article - [read more](http://www.mediawiki.org/wiki/API:Edit)
@@ -148,6 +184,12 @@ Creates / edits an article - [read more](http://www.mediawiki.org/wiki/API:Edit)
 ### bot.delete(title, reason, callback)
 
 Deletes an article - [read more](http://www.mediawiki.org/wiki/API:Delete)
+
+### bot.purge(titles, callback)
+
+Purge a given list of articles (titles or page IDs can be provided) - [read more](https://www.mediawiki.org/wiki/API:Purge)
+
+> By providing `Category:Foo` as `titles` argument you can purge all pages in a given category (available since [MW 1.21](https://github.com/wikimedia/mediawiki/commit/62216932c197f1c248ca2d95bc230f87a79ccd71))
 
 ### bot.token(title, action, callback)
 
@@ -177,9 +219,17 @@ Get list of all images that are used on a given page - [read more](http://www.me
 
 Gets metadata (including uploader, size, dimensions and EXIF data) of given image
 
+### bot.getLog(type, start, callback)
+
+Get entries form Special:Log - [read more](http://www.mediawiki.org/wiki/API:Logevents)
+
 ### bot.expandTemplates(content, title, callback)
 
 Returns XML with preprocessed wikitext - [read more](https://www.mediawiki.org/wiki/API:Parsing_wikitext#expandtemplates)
+
+### bot.parse(content, title, callback)
+
+Returns parsed wikitext - [read more](https://www.mediawiki.org/wiki/API:Parsing_wikitext#parse)
 
 ### bot.fetchUrl(url, callback)
 
@@ -192,6 +242,14 @@ Returns entries from recent changes (starting from a given point)
 ### bot.getRecentChanges(start, callback)
 
 Returns entries from recent changes (starting from a given point)
+
+### bot.getSiteInfo(props, callback)
+
+Returns site information entries - [read more](http://www.mediawiki.org/wiki/API:Siteinfo)
+
+### bot.getSiteStats(props, callback)
+
+Returns site statistics (number of articles, edits etc) - [read more](http://www.mediawiki.org/wiki/API:Siteinfo)
 
 ### client.getQueryPage(queryPage, callback)
 
@@ -217,6 +275,10 @@ Gets all external links used in article
 
 Gets all articles that links to given article
 
+### bot.search(query, callback)
+
+Performs a search
+
 ## Helpers
 
 ### bot.getConfig(key, def)
@@ -226,3 +288,23 @@ Gets config entry value (returns ``def`` value if not found)
 ### bot.setConfig(key, val)
 
 Sets config entry value
+
+### bot.diff(old, current)
+
+Returns a diff colored using ANSI colors (powered by [diff](https://www.npmjs.com/package/diff))
+
+## [Wikia-specific](http://www.wikia.com/api/v1) bot methods
+
+> They're grouped in `bot.wikia` "namespace".
+
+### bot.wikia.getWikiVariables(callback)
+
+Get wiki-specific settings (like ThemeDesigner colors and hubs).
+
+### bot.wikia.getUser(userId, callback)
+
+Get information (avatar, number of edits) about a given user
+
+### bot.wikia.getUsers(userIds, callback)
+
+Get information (avatar, number of edits) about a given set of users (by their IDs)

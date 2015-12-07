@@ -6,20 +6,19 @@
  */
 'use strict';
 
-var bot = require('../lib/bot'),
+var bot = require('..'),
 	client = new bot({
 		server: 'en.wikipedia.org',
-		path: '/w',
-		debug: true
+		path: '/w'
 	});
 
-client.getPagesInCategory('Bosons', function(pages) {
-	client.log('Pages in category');
+client.getPagesInCategory('Sports_cars', function(err, pages) {
+	client.log('Pages in category: %d', pages.length);
 	client.logData(pages);
 
 	pages.forEach(function(page) {
-		client.getArticle(page.title, function(content) {
-			client.log('%s: %s', page.title, content.substr(0, 75).replace(/\n/g, ' '));
+		client.getArticle(page.title, function(err, content) {
+			console.log('%s: %s', page.title, content.substr(0, 75).replace(/\n/g, ' '));
 		});
 	});
 });
