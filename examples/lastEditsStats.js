@@ -6,115 +6,117 @@
 'use strict';
 
 var bot = require('../lib/bot'),
-	client = new bot('config.js');
+	client = new bot('config.js'),
+	LIMIT = 5000;
 
-var LIMIT = 500;
+function recentChangesCallback(data, next) {
+        var usersStats = {},
+                pagesStats = {},
+                count = 0,
+                from,
+                to;
 
-client.getRecentChanges(false, function(data, next) {
-	var usersStats = {},
-		pagesStats = {},
-		count = 0,
-		from,
-		to;
+        data.forEach(function(entry) {
+                if (count >= LIMIT) {
+                        return;
+                }
 
-	data.forEach(function(entry) {
-		if (count >= LIMIT) {
-			return;
-		}
+                count++;
 
-		count++;
+                // only main namespace
+                if (entry.ns !== 0) {
+                        return;
+                }
 
-		// only main namespace
-		if (entry.ns !== 0) {
-			return;
-		}
+                // register timestamp
+                if (!from) {
+                        from = entry.timestamp;
+                }
 
-		// register timestamp
-		if (!from) {
-			from = entry.timestamp;
-		}
-		to = entry.timestamp;
+                to = entry.timestamp;
 
-		//console.log(JSON.stringify(entry));
+                // console.log(JSON.stringify(entry));
 
-		// register pages stats
-		if (!pagesStats[entry.title]) {
-			pagesStats[entry.title] = {
-				title: entry.title,
-				edits: 0,
-				editors: [],
-				diff: 0
-			};
-		}
+                // register pages stats
+                if (!pagesStats[entry.title]) {
+                        pagesStats[entry.title] = {
+                                title: entry.title,
+                                edits: 0,
+                                editors: [],
+                                diff: 0
+                        };
+                }
 
-		var pagesItem = pagesStats[entry.title];
-		pagesItem.edits++;
+                var pagesItem = pagesStats[entry.title];
+                pagesItem.edits++;
 
-		if (pagesItem.editors.indexOf(entry.user) === -1) {
-			pagesItem.editors.push(entry.user);
-		}
+                if (pagesItem.editors.indexOf(entry.user) === -1) {
+                        pagesItem.editors.push(entry.user);
+                }
 
-		// register users stats
-		if (!usersStats[entry.user]) {
-			usersStats[entry.user] = {
-				user: entry.user,
-				edits: 0,
-				created: 0,
-				diff: 0
-			};
+                // register users stats
+                if (!usersStats[entry.user]) {
+                        usersStats[entry.user] = {
+                                user: entry.user,
+                                edits: 0,
+                                created: 0,
+                                diff: 0
+                        };
 
-			// mark bots
-			if (typeof entry.bot !== 'undefined') {
-				usersStats[entry.user].bot = true;
-			}
-		}
+                        // mark bots
+                        if (typeof entry.bot !== 'undefined') {
+                                usersStats[entry.user].bot = true;
+                        }
+                }
 
-		var usersItem = usersStats[entry.user];
+                var usersItem = usersStats[entry.user];
 
-		switch(entry.type) {
-			case 'new':
-				usersItem.created++;
-				break;
+                switch(entry.type) {
+                        case 'new':
+                                usersItem.created++;
+                                break;
 
-			default:
-			case 'edit':
-				usersItem.edits++;
-		}
+                        default:
+                        case 'edit':
+                                usersItem.edits++;
+                }
 
-		// edit size difference
-		var diff = entry.newlen - entry.oldlen;
-		pagesItem.diff += diff;
-		usersItem.diff += diff;
-	});
+                // edit size difference
+                var diff = entry.newlen - entry.oldlen;
+                pagesItem.diff += diff;
+                usersItem.diff += diff;
+        });
 
-	// generate an array of results
-	var key,
-		pages = [],
-		users = [];
+        // generate an array of results
+        var key,
+                pages = [],
+                users = [];
 
-	for (key in pagesStats) {
-		pages.push(pagesStats[key]);
-	}
+        for (key in pagesStats) {
+                pages.push(pagesStats[key]);
+        }
 
-	for (key in usersStats) {
-		users.push(usersStats[key]);
-	}
-	
-	// sort them
-	pages.sort(function(a, b) {
-		return b.edits - a.edits;
-	});
+        for (key in usersStats) {
+                users.push(usersStats[key]);
+        }
+
+        // sort them
+        pages.sort(function(a, b) {
+                return b.edits - a.edits;
+        });
 
 	users.sort(function(a, b) {
-		return b.diff - a.diff;
-	});
+                return b.diff - a.diff;
+        });
 
-	// emit results
-	console.log('Stats for the last ' + count + ' recent changes (from ' + from + ' back to ' + to + ')...');
+        // emit results
+        console.log('Stats for the last ' + count + ' recent changes (from ' + from + ' back to ' + to + ')...');
 
-	console.log('Pages statistcs:');
-	console.log(pages);
+        console.log('Pages statistcs:');
+        console.log(pages);
 
-	console.log('Users statistcs:');
-	console.log(users);
-});
+        console.log('Users statistcs:');
+        console.log(users);
+}
+
+client.getRecentChanges('2015-10-23 00:00:00', '2015-10-23 23:59:59', recentChangesCallback);
