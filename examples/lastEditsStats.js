@@ -7,7 +7,9 @@
 
 var bot = require('../lib/bot'),
 	client = new bot('config.js'),
-	PRINT_PAGES_STATS = true,
+	START = '2015-10-22 00:00:00',
+	END = '2015-10-26 23:59:59',
+	PRINT_PAGES_STATS = false,
 	PRINT_USERS_STATS = true,
 	LIMIT = 5000;
 
@@ -125,4 +127,4 @@ function recentChangesCallback(data, next) {
         }
 }
 
-client.getRecentChanges('2015-10-23 00:00:00', '2015-10-23 23:59:59', recentChangesCallback);
+client.getRecentChanges(START, END, recentChangesCallback);
