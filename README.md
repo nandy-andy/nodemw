@@ -235,11 +235,11 @@ Returns parsed wikitext - [read more](https://www.mediawiki.org/wiki/API:Parsing
 
 Makes a GET request to provided resource and returns its content.
 
-### bot.getRecentChanges(start, callback)
+### bot.getRecentChanges(start, end, callback)
 
 Returns entries from recent changes (starting from a given point)
 
-### bot.getRecentChanges(start, callback)
+### bot.getRecentChanges(start, end, callback)
 
 Returns entries from recent changes (starting from a given point)
 
