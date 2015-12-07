@@ -7,6 +7,8 @@
 
 var bot = require('../lib/bot'),
 	client = new bot('config.js'),
+	PRINT_PAGES_STATS = true,
+	PRINT_USERS_STATS = true,
 	LIMIT = 5000;
 
 function recentChangesCallback(data, next) {
@@ -105,18 +107,22 @@ function recentChangesCallback(data, next) {
                 return b.edits - a.edits;
         });
 
-	users.sort(function(a, b) {
+        users.sort(function(a, b) {
                 return b.diff - a.diff;
         });
 
         // emit results
         console.log('Stats for the last ' + count + ' recent changes (from ' + from + ' back to ' + to + ')...');
 
-        console.log('Pages statistcs:');
-        console.log(pages);
+        if(PRINT_PAGES_STATS) {
+          console.log('Pages statistcs:');
+          console.log(pages);
+        }
 
-        console.log('Users statistcs:');
-        console.log(users);
+        if(PRINT_USERS_STATS) {
+          console.log('Users statistcs:');
+          console.log(users);
+        }
 }
 
 client.getRecentChanges('2015-10-23 00:00:00', '2015-10-23 23:59:59', recentChangesCallback);
